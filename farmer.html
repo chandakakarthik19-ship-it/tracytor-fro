@@ -211,6 +211,7 @@ const API = "https://tractor-back-1l40.onrender.com";
 async function load(){
   const token = localStorage.getItem("token");
   const name = localStorage.getItem("name");
+  const phone = localStorage.getItem("phone");
 
   if(!token){
     location.href = "farmer-login.html";
@@ -218,14 +219,15 @@ async function load(){
   }
 
   document.getElementById("info").innerHTML = `
-    <div>
-      <strong>${name || "Farmer"}</strong><br>
-      <span>Role: Farmer</span>
-    </div>
-    <div class="actions">
-      <a class="logout" href="#" onclick="logout()">Logout</a>
-    </div>
-  `;
+  <div>
+    <strong>${name || "Farmer"}</strong><br>
+    <span>📞 ${phone || "-"}</span><br>
+    <span>Role: Farmer</span>
+  </div>
+  <div class="actions">
+    <a class="logout" href="#" onclick="logout()">Logout</a>
+  </div>
+`;
 
   const res = await fetch(API + "/api/work/my", {
     headers:{ Authorization:"Bearer " + token }
