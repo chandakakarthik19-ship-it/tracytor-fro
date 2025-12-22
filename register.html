@@ -173,7 +173,6 @@ document.getElementById('register').addEventListener('click', async ()=> {
   const phone = document.getElementById('phone').value.trim();
   const password = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
-  const file = document.getElementById('profile').files[0];
 
   if(!name || !phone || !password || !confirmPassword){
     alert('Please fill all required fields');
@@ -185,15 +184,10 @@ document.getElementById('register').addEventListener('click', async ()=> {
     return;
   }
 
-  const form = new FormData();
-  form.append('name', name);
-  form.append('phone', phone);
-  form.append('password', password);
-  if(file) form.append('profile', file);
-
   const res = await fetch(API + '/api/farmer', {
     method: 'POST',
-    body: form
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, phone, password })
   });
 
   const data = await res.json();
