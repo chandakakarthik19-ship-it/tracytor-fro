@@ -318,7 +318,7 @@ submitBtn.onclick = async ()=>{
       body:JSON.stringify(body)
     });
     alert("Work Updated");
-  }else{
+  } else {
     await fetch(API+"/api/admin/work",{
       method:"POST",
       headers:{
@@ -330,9 +330,14 @@ submitBtn.onclick = async ()=>{
     alert("Work Added");
   }
 
+  // ✅ IMPORTANT FIX
+  const selectedFarmer = farmerSelect.value;
+
   resetForm();
+  farmerFilter.value = selectedFarmer;
   loadHistory();
 };
+
 
 /* LOAD HISTORY */
 farmerFilter.onchange = loadHistory;
