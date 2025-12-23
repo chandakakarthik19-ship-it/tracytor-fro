@@ -6,17 +6,60 @@
 <title>Admin Dashboard</title>
 
 <style>
-/* (your existing CSS kept as-is for safety) */
-body{margin:0;font-family:Segoe UI,Arial;background:#f3f4f6}
-.container{max-width:900px;margin:auto;padding:24px}
-.card{background:#fff;padding:22px;border-radius:12px;margin-bottom:22px}
-label{display:block;margin-top:12px;font-weight:600}
-input,select{width:100%;padding:10px;margin-top:6px}
-button{margin-top:14px;padding:10px 16px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-th,td{padding:10px;border-bottom:1px solid #ddd}
-th{background:#e5e7eb}
-.logout-btn{background:#dc2626;width:200px}
+body{
+  margin:0;
+  font-family:Segoe UI,Arial;
+  background:#f3f4f6;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-shadow:0 8px 20px rgba(0,0,0,.08);
+}
+label{
+  font-weight:600;
+  margin-top:10px;
+  display:block;
+}
+input,select{
+  width:100%;
+  padding:10px;
+  margin-top:6px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+button{
+  margin-top:14px;
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  background:#2563eb;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+button.edit{ background:#16a34a; }
+button.delete{ background:#dc2626; }
+button.logout{ background:#111827; float:right; }
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+th,td{
+  padding:10px;
+  border-bottom:1px solid #ddd;
+}
+th{
+  background:#e5e7eb;
+}
 </style>
 </head>
 
@@ -24,45 +67,58 @@ th{background:#e5e7eb}
 <div class="container">
 
 <h2>Admin Dashboard</h2>
+<button class="logout" onclick="logout()">Logout</button>
 
-<!-- ADD / EDIT -->
+<!-- ADD / EDIT WORK -->
 <div class="card">
   <h3 id="formTitle">Add Work</h3>
 
-  <label>Farmer</label>
-  <select id="farmerSelect"></select>
+  <label for="farmerSelect">Select Farmer</label>
+  <select id="farmerSelect" title="Select Farmer"></select>
 
-  <label>Work Type</label>
-  <select id="workType">
-    <option value="">-- Select --</option>
-    <option>దుక్కు</option>
-    <option>లోడింగ్</option>
-    <option>రోటావేటర్</option>
-  </select>
+  <label for="workType">Work Type</label>
+  <input
+    id="workType"
+    type="text"
+    title="Work Type"
+    placeholder="Enter work type"
+  >
 
-  <label>Minutes</label>
-  <input id="minutes">
+  <label for="minutes">Minutes</label>
+  <input
+    id="minutes"
+    type="number"
+    title="Minutes"
+    placeholder="Enter minutes"
+  >
 
-  <label>Rate / 60</label>
-  <input id="rate" type="number">
+  <label for="rate">Rate per 60 minutes</label>
+  <input
+    id="rate"
+    type="number"
+    title="Rate per 60 minutes"
+    placeholder="Enter rate"
+  >
 
   <button id="submitBtn">Add Work</button>
 </div>
 
-<!-- HISTORY -->
+<!-- WORK HISTORY -->
 <div class="card">
-  <label>Farmer History</label>
-  <select id="farmerFilter"></select>
+  <h3>Work History</h3>
+
+  <label for="farmerFilter">Filter by Farmer</label>
+  <select id="farmerFilter" title="Filter by Farmer"></select>
 
   <table>
     <thead>
       <tr>
         <th>Date</th>
+        <th>Farmer</th>
         <th>Work</th>
         <th>Minutes</th>
         <th>Rate</th>
         <th>Total</th>
-        <th>Paid</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -70,31 +126,24 @@ th{background:#e5e7eb}
   </table>
 </div>
 
-<div style="text-align:center">
-  <button class="logout-btn" onclick="logout()">Logout</button>
-</div>
-
 </div>
 
 <script>
 const API = "https://tractor-back-1l40.onrender.com";
 const token = () => localStorage.getItem("token");
-
 let editWorkId = null;
 
-/* ================= INIT ================= */
 if(!token()) location.href="index.html";
-loadFarmers();
 
-/* ================= LOAD FARMERS ================= */
+/* LOAD FARMERS */
 async function loadFarmers(){
-  const res = await fetch(API + "/api/admin/farmers",{
-    headers:{ Authorization:"Bearer "+token() }
+  const res = await fetch(API + "/api/admin/farmers", {
+    headers:{ Authorization:"Bearer " + token() }
   });
   const farmers = await res.json();
 
-  farmerSelect.innerHTML = '<option value="">Select</option>';
-  farmerFilter.innerHTML = '<option value="">Select</option>';
+  farmerSelect.innerHTML = '<option value="">Select Farmer</option>';
+  farmerFilter.innerHTML = '<option value="">Select Farmer</option>';
 
   farmers.forEach(f=>{
     farmerSelect.innerHTML += `<option value="${f._id}">${f.name}</option>`;
@@ -102,7 +151,39 @@ async function loadFarmers(){
   });
 }
 
-/* ================= ADD / UPDATE ================= */
+/* LOAD WORKS */
+async function loadWorks(){
+  tbody.innerHTML = "";
+  if(!farmerFilter.value) return;
+
+  const res = await fetch(
+    API + "/api/work?farmerId=" + farmerFilter.value,
+    { headers:{ Authorization:"Bearer " + token() } }
+  );
+
+  const data = await res.json();
+
+  data.works.forEach(w=>{
+    tbody.innerHTML += `
+      <tr>
+        <td>${new Date(w.date).toLocaleDateString()}</td>
+        <td>${w.farmer.name}</td>
+        <td>${w.workType}</td>
+        <td>${w.minutes}</td>
+        <td>${w.ratePer60}</td>
+        <td>${w.totalAmount}</td>
+        <td>
+          <button class="edit"
+            onclick="startEdit('${w._id}','${w.farmer._id}','${w.workType}',${w.minutes},${w.ratePer60})">
+            Edit
+          </button>
+          <button class="delete" onclick="deleteWork('${w._id}')">Delete</button>
+        </td>
+      </tr>`;
+  });
+}
+
+/* ADD / UPDATE */
 submitBtn.onclick = async ()=>{
   const body = {
     farmerId: farmerSelect.value,
@@ -111,62 +192,38 @@ submitBtn.onclick = async ()=>{
     ratePer60: Number(rate.value)
   };
 
+  if(!body.farmerId || !body.workType || !body.minutes || !body.ratePer60){
+    alert("All fields are required");
+    return;
+  }
+
   if(editWorkId){
     await fetch(API + "/api/work/" + editWorkId,{
       method:"PUT",
       headers:{
         "Content-Type":"application/json",
-        Authorization:"Bearer "+token()
+        Authorization:"Bearer " + token()
       },
-      body: JSON.stringify(body)
+      body:JSON.stringify(body)
     });
-    alert("Work Updated");
+    alert("Work updated");
   } else {
     await fetch(API + "/api/work/add",{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
-        Authorization:"Bearer "+token()
+        Authorization:"Bearer " + token()
       },
-      body: JSON.stringify(body)
+      body:JSON.stringify(body)
     });
-    alert("Work Added");
+    alert("Work added");
   }
 
   resetForm();
-  loadHistory();
+  loadWorks();
 };
 
-/* ================= LOAD HISTORY ================= */
-farmerFilter.onchange = loadHistory;
-
-async function loadHistory(){
-  tbody.innerHTML="";
-  if(!farmerFilter.value) return;
-
-  const res = await fetch(API + "/api/work?farmerId="+farmerFilter.value,{
-    headers:{ Authorization:"Bearer "+token() }
-  });
-  const data = await res.json();
-
-  data.works.forEach(w=>{
-    tbody.innerHTML += `
-      <tr>
-        <td>${new Date(w.date).toLocaleDateString()}</td>
-        <td>${w.workType}</td>
-        <td>${w.minutes}</td>
-        <td>${w.ratePer60}</td>
-        <td>${w.totalAmount}</td>
-        <td>${w.paymentGiven||0}</td>
-        <td>
-          <button onclick="startEdit('${w._id}','${w.farmer}','${w.workType}',${w.minutes},${w.ratePer60})">Edit</button>
-          <button onclick="deleteWork('${w._id}')">Delete</button>
-        </td>
-      </tr>`;
-  });
-}
-
-/* ================= EDIT ================= */
+/* EDIT */
 function startEdit(id, farmerId, wt, mins, rate){
   editWorkId = id;
   farmerSelect.value = farmerId;
@@ -174,39 +231,40 @@ function startEdit(id, farmerId, wt, mins, rate){
   minutes.value = mins;
   rate.value = rate;
 
-  formTitle.innerText="Edit Work";
-  submitBtn.innerText="Update Work";
+  formTitle.innerText = "Edit Work";
+  submitBtn.innerText = "Update Work";
   window.scrollTo({ top:0, behavior:"smooth" });
 }
 
-/* ================= DELETE ================= */
+/* DELETE */
 async function deleteWork(id){
-  if(!confirm("Delete work?")) return;
-
+  if(!confirm("Delete this work?")) return;
   await fetch(API + "/api/work/" + id,{
     method:"DELETE",
-    headers:{ Authorization:"Bearer "+token() }
+    headers:{ Authorization:"Bearer " + token() }
   });
-
-  loadHistory();
+  loadWorks();
 }
 
-/* ================= RESET ================= */
+/* RESET */
 function resetForm(){
   editWorkId = null;
-  farmerSelect.value="";
-  workType.value="";
-  minutes.value="";
-  rate.value="";
-  formTitle.innerText="Add Work";
-  submitBtn.innerText="Add Work";
+  farmerSelect.value = "";
+  workType.value = "";
+  minutes.value = "";
+  rate.value = "";
+  formTitle.innerText = "Add Work";
+  submitBtn.innerText = "Add Work";
 }
 
-/* ================= LOGOUT ================= */
+/* LOGOUT */
 function logout(){
   localStorage.clear();
   location.href="index.html";
 }
+
+farmerFilter.onchange = loadWorks;
+loadFarmers();
 </script>
 
 </body>
