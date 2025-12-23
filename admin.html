@@ -104,28 +104,6 @@ th,td{
 
 <h2>Admin Dashboard</h2>
 
-<button onclick="toggleFarmers()" class="warning">Manage Farmers</button>
-
-<!-- CHANGE PASSWORD -->
-<div class="card">
-  <h3>Change Admin Password</h3>
-
-  <label>Old Password</label>
-  <input id="oldPass" type="password">
-
-  <label>New Password</label>
-  <input id="newPass" type="password">
-
-  <button onclick="changePassword()">Update Password</button>
-</div>
-
-<!-- MANAGE FARMERS -->
-<div class="card" id="farmersBox" style="display:none">
-  <h3>Registered Farmers</h3>
-  <select id="farmerDeleteSelect"></select>
-  <button class="danger" onclick="deleteFarmer()">Delete Farmer</button>
-</div>
-
 <!-- ADD / EDIT WORK -->
 <div class="card">
   <h3 id="formTitle">Add Work</h3>
@@ -182,6 +160,41 @@ th,td{
   </div>
 </div>
 
+<!-- CHANGE PASSWORD BUTTON -->
+<div class="card center">
+  <button class="warning" onclick="togglePasswordBox()">
+    Change Admin Password
+  </button>
+</div>
+
+<!-- CHANGE PASSWORD FORM -->
+<div class="card" id="passwordBox" style="display:none">
+  <h3>Change Admin Password</h3>
+
+  <label>Old Password</label>
+  <input id="oldPass" type="password">
+
+  <label>New Password</label>
+  <input id="newPass" type="password">
+
+  <button onclick="changePassword()">Update Password</button>
+</div>
+
+<!-- MANAGE FARMERS BUTTON -->
+<div class="card center">
+  <button class="warning" onclick="toggleFarmers()">
+    Manage Farmers
+  </button>
+</div>
+
+<!-- MANAGE FARMERS -->
+<div class="card" id="farmersBox" style="display:none">
+  <h3>Registered Farmers</h3>
+  <select id="farmerDeleteSelect"></select>
+  <button class="danger" onclick="deleteFarmer()">Delete Farmer</button>
+</div>
+
+<!-- LOGOUT -->
 <div class="center">
   <button class="danger" onclick="logout()">Logout</button>
 </div>
@@ -193,12 +206,13 @@ const API = "https://tractor-back-1l40.onrender.com";
 const token = () => localStorage.getItem("token");
 
 let editWorkId = null;
-
 window.onload = loadFarmers;
 
 /* LOAD FARMERS */
 async function loadFarmers(){
-  const res = await fetch(API+"/api/admin/farmers",{headers:{Authorization:"Bearer "+token()}});
+  const res = await fetch(API+"/api/admin/farmers",{
+    headers:{Authorization:"Bearer "+token()}
+  });
   const data = await res.json();
   const farmers = data.farmers || [];
 
@@ -357,11 +371,18 @@ async function changePassword(){
   oldPass.value=""; newPass.value="";
 }
 
-/* FARMER MANAGEMENT */
-function toggleFarmers(){
-  farmersBox.style.display = farmersBox.style.display==="none"?"block":"none";
+/* TOGGLES */
+function togglePasswordBox(){
+  passwordBox.style.display =
+    passwordBox.style.display==="none" ? "block" : "none";
 }
 
+function toggleFarmers(){
+  farmersBox.style.display =
+    farmersBox.style.display==="none" ? "block" : "none";
+}
+
+/* DELETE FARMER */
 async function deleteFarmer(){
   const id = farmerDeleteSelect.value;
   if(!id) return alert("Select farmer");
