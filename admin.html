@@ -15,13 +15,14 @@
   --card:#ffffff;
   --border:#e5e7eb;
 }
+*{box-sizing:border-box}
 body{
   margin:0;
   font-family:Segoe UI,Arial;
   background:var(--bg);
 }
 .container{
-  max-width:900px;
+  max-width:950px;
   margin:auto;
   padding:20px;
 }
@@ -32,6 +33,7 @@ body{
   margin-bottom:20px;
   box-shadow:0 8px 20px rgba(0,0,0,0.08);
 }
+h2{text-align:center}
 label{display:block;margin-top:12px;font-weight:600}
 input,select{
   width:100%;
@@ -51,8 +53,8 @@ button{
   color:white;
 }
 button.success{background:var(--success)}
-button.danger{background:var(--danger)}
 button.warning{background:var(--warning);color:#000}
+button.danger{background:var(--danger)}
 table{
   width:100%;
   border-collapse:collapse;
@@ -81,6 +83,7 @@ th,td{
   font-weight:700;
 }
 .center{text-align:center}
+.hide{display:none}
 </style>
 </head>
 
@@ -93,16 +96,16 @@ th,td{
 <div class="card">
   <h3 id="formTitle">Add Work</h3>
 
-  <label for="farmerSelect">Farmer</label>
+  <label>Farmer</label>
   <select id="farmerSelect"></select>
 
-  <label for="workType">Work Type</label>
-  <input id="workType" placeholder="Eg: Ploughing">
+  <label>Work Type</label>
+  <input id="workType">
 
-  <label for="minutes">Minutes</label>
-  <input id="minutes" placeholder="1.20 = 1 hour 20 mins">
+  <label>Minutes</label>
+  <input id="minutes" placeholder="1.20 = 1h 20m">
 
-  <label for="rate">Rate / Hour</label>
+  <label>Rate / Hour</label>
   <input id="rate" type="number">
 
   <button id="submitBtn">Add Work</button>
@@ -112,10 +115,10 @@ th,td{
 <div class="card">
   <h3>Farmer Payment</h3>
 
-  <label for="paymentFarmer">Select Farmer</label>
+  <label>Select Farmer</label>
   <select id="paymentFarmer"></select>
 
-  <label for="paymentAmount">Amount</label>
+  <label>Payment Amount</label>
   <input id="paymentAmount" type="number">
 
   <button class="success" onclick="makePayment()">Add Payment</button>
@@ -123,7 +126,7 @@ th,td{
 
 <!-- HISTORY -->
 <div class="card">
-  <label for="farmerFilter">Farmer History</label>
+  <label>Farmer History</label>
   <select id="farmerFilter"></select>
 
   <table>
@@ -149,6 +152,41 @@ th,td{
   </div>
 </div>
 
+<!-- CHANGE PASSWORD -->
+<div class="card center">
+  <button class="warning" onclick="togglePassword()">Change Admin Password</button>
+</div>
+
+<div class="card hide" id="passwordBox">
+  <label>Old Password</label>
+  <input id="oldPass" type="password">
+
+  <label>New Password</label>
+  <input id="newPass" type="password">
+
+  <button onclick="changePassword()">Update Password</button>
+</div>
+
+<!-- MANAGE FARMERS -->
+<div class="card center">
+  <button class="warning" onclick="toggleFarmers()">Manage Farmers</button>
+</div>
+
+<div class="card hide" id="farmersBox">
+  <label>Select Farmer</label>
+  <select id="farmerDeleteSelect"></select>
+
+  <label>Admin Password</label>
+  <input id="adminDeletePass" type="password">
+
+  <button class="danger" onclick="deleteFarmer()">Delete Farmer</button>
+</div>
+
+<!-- LOGOUT -->
+<div class="card center">
+  <button class="danger" onclick="logout()">Logout</button>
+</div>
+
 </div>
 
 <script>
@@ -162,15 +200,20 @@ window.onload=loadFarmers;
 async function loadFarmers(){
   const res=await fetch(API+"/api/admin/farmers",{headers:{Authorization:"Bearer "+token()}});
   const data=await res.json();
+
   let opt='<option value="">Select</option>';
   data.farmers.forEach(f=>opt+=`<option value="${f._id}">${f.name}</option>`);
-  farmerSelect.innerHTML=farmerFilter.innerHTML=paymentFarmer.innerHTML=opt;
+
+  farmerSelect.innerHTML =
+  paymentFarmer.innerHTML =
+  farmerFilter.innerHTML =
+  farmerDeleteSelect.innerHTML = opt;
 }
 
 /* ADD / UPDATE WORK */
 submitBtn.onclick=async()=>{
-  const mins = minutes.value.includes(".")
-    ? Number(minutes.value.split(".")[0])*60 + Number(minutes.value.split(".")[1])
+  const mins=minutes.value.includes(".")
+    ? Number(minutes.value.split(".")[0])*60+Number(minutes.value.split(".")[1])
     : Number(minutes.value);
 
   const body={
@@ -205,7 +248,7 @@ async function loadHistory(){
   const res=await fetch(API+"/api/admin/history/"+farmerFilter.value,{
     headers:{Authorization:"Bearer "+token()}
   });
-  const { works, payments }=await res.json();
+  const {works,payments}=await res.json();
 
   let total=0, paid=0;
 
@@ -247,30 +290,25 @@ async function loadHistory(){
   balanceBox.value=total-paid;
 }
 
-/* WORK HELPERS */
-function startEdit(id,farmer,work,mins,rate){
+/* HELPERS */
+function startEdit(id,f,wt,m,r){
   editWorkId=id;
+  farmerSelect.value=f;
+  workType.value=wt;
+  minutes.value=m;
+  rate.value=r;
   formTitle.innerText="Edit Work";
   submitBtn.innerText="Update Work";
-  farmerSelect.value=farmer;
-  workType.value=work;
-  minutes.value=mins;
-  rate.value=rate;
 }
 function resetForm(){
   editWorkId=null;
   formTitle.innerText="Add Work";
   submitBtn.innerText="Add Work";
-  workType.value="";
-  minutes.value="";
-  rate.value="";
+  workType.value=minutes.value=rate.value="";
 }
 async function deleteWork(id){
-  if(!confirm("Delete work?")) return;
-  await fetch(API+"/api/admin/work/"+id,{
-    method:"DELETE",
-    headers:{Authorization:"Bearer "+token()}
-  });
+  if(!confirm("Delete work?"))return;
+  await fetch(API+"/api/admin/work/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token()}});
   loadHistory();
 }
 
@@ -285,9 +323,9 @@ async function makePayment(){
   farmerFilter.value=paymentFarmer.value;
   loadHistory();
 }
-async function editPayment(id,amt){
-  const n=prompt("New amount",amt);
-  if(!n) return;
+async function editPayment(id,a){
+  const n=prompt("New amount",a);
+  if(!n)return;
   await fetch(API+"/api/admin/payment/"+id,{
     method:"PUT",
     headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
@@ -296,12 +334,38 @@ async function editPayment(id,amt){
   loadHistory();
 }
 async function deletePayment(id){
-  if(!confirm("Delete payment?")) return;
-  await fetch(API+"/api/admin/payment/"+id,{
-    method:"DELETE",
-    headers:{Authorization:"Bearer "+token()}
-  });
+  if(!confirm("Delete payment?"))return;
+  await fetch(API+"/api/admin/payment/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token()}});
   loadHistory();
+}
+
+/* ADMIN OPTIONS */
+function togglePassword(){passwordBox.classList.toggle("hide")}
+function toggleFarmers(){farmersBox.classList.toggle("hide")}
+
+async function changePassword(){
+  await fetch(API+"/api/admin/change-password",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
+    body:JSON.stringify({ oldPassword:oldPass.value, newPassword:newPass.value })
+  });
+  alert("Password updated");
+  oldPass.value=newPass.value="";
+}
+
+async function deleteFarmer(){
+  await fetch(API+"/api/admin/farmer/"+farmerDeleteSelect.value,{
+    method:"DELETE",
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
+    body:JSON.stringify({ adminPassword:adminDeletePass.value })
+  });
+  alert("Farmer deleted");
+  loadFarmers();
+}
+
+function logout(){
+  localStorage.clear();
+  location.href="index.html";
 }
 </script>
 
