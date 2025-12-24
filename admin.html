@@ -22,10 +22,11 @@ body{
   background:var(--bg);
 }
 .container{
-  max-width:950px;
+  max-width:1000px;
   margin:auto;
   padding:20px;
 }
+h2{text-align:center}
 .card{
   background:#fff;
   padding:20px;
@@ -33,7 +34,6 @@ body{
   margin-bottom:20px;
   box-shadow:0 8px 20px rgba(0,0,0,0.08);
 }
-h2{text-align:center}
 label{display:block;margin-top:12px;font-weight:600}
 input,select{
   width:100%;
@@ -65,6 +65,7 @@ th,td{
   border-bottom:1px solid var(--border);
   text-align:center;
 }
+th{background:#f1f5f9}
 .summary{
   display:flex;
   gap:15px;
@@ -96,16 +97,24 @@ th,td{
 <div class="card">
   <h3 id="formTitle">Add Work</h3>
 
-  <label>Farmer</label>
+  <label for="farmerSelect">Farmer</label>
   <select id="farmerSelect"></select>
 
-  <label>Work Type</label>
-  <input id="workType">
+  <label for="workType">Work Type</label>
+  <select id="workType">
+    <option value="">-- Select Work --</option>
+    <option>దుక్కు</option>
+    <option>లోడింగ్</option>
+    <option>రోటావేటర్</option>
+    <option>జొన్నలు</option>
+    <option>వరిసేను ఆట</option>
+    <option>గత్తం</option>
+  </select>
 
-  <label>Minutes</label>
+  <label for="minutes">Minutes</label>
   <input id="minutes" placeholder="1.20 = 1h 20m">
 
-  <label>Rate / Hour</label>
+  <label for="rate">Rate / Hour</label>
   <input id="rate" type="number">
 
   <button id="submitBtn">Add Work</button>
@@ -115,10 +124,10 @@ th,td{
 <div class="card">
   <h3>Farmer Payment</h3>
 
-  <label>Select Farmer</label>
+  <label for="paymentFarmer">Select Farmer</label>
   <select id="paymentFarmer"></select>
 
-  <label>Payment Amount</label>
+  <label for="paymentAmount">Payment Amount</label>
   <input id="paymentAmount" type="number">
 
   <button class="success" onclick="makePayment()">Add Payment</button>
@@ -126,7 +135,7 @@ th,td{
 
 <!-- HISTORY -->
 <div class="card">
-  <label>Farmer History</label>
+  <label for="farmerFilter">Farmer History</label>
   <select id="farmerFilter"></select>
 
   <table>
@@ -190,71 +199,94 @@ th,td{
 </div>
 
 <script>
-const API="http://localhost:4000";
-const token=()=>localStorage.getItem("token");
+const API = "http://localhost:4000";
+const token = () => localStorage.getItem("token");
 
-let editWorkId=null;
-window.onload=loadFarmers;
+if(!token()){
+  alert("Session expired. Please login again.");
+  location.href = "index.html";
+}
 
-/* LOAD FARMERS */
+let editWorkId = null;
+window.onload = loadFarmers;
+
+/* LOAD FARMERS (FIXED) */
 async function loadFarmers(){
-  const res=await fetch(API+"/api/admin/farmers",{headers:{Authorization:"Bearer "+token()}});
-  const data=await res.json();
+  try{
+    const res = await fetch(API + "/api/admin/farmers",{
+      headers:{ Authorization:"Bearer " + token() }
+    });
 
-  let opt='<option value="">Select</option>';
-  data.farmers.forEach(f=>opt+=`<option value="${f._id}">${f.name}</option>`);
+    if(!res.ok){
+      alert("Unable to load farmers. Login again.");
+      logout();
+      return;
+    }
 
-  farmerSelect.innerHTML =
-  paymentFarmer.innerHTML =
-  farmerFilter.innerHTML =
-  farmerDeleteSelect.innerHTML = opt;
+    const data = await res.json();
+    const farmers = data.farmers || [];
+
+    let opt = '<option value="">Select Farmer</option>';
+    farmers.forEach(f=>{
+      opt += `<option value="${f._id}">${f.name}</option>`;
+    });
+
+    document.getElementById("farmerSelect").innerHTML = opt;
+    document.getElementById("paymentFarmer").innerHTML = opt;
+    document.getElementById("farmerFilter").innerHTML = opt;
+    document.getElementById("farmerDeleteSelect").innerHTML = opt;
+
+  }catch(err){
+    console.error(err);
+    alert("Error loading farmers");
+  }
 }
 
 /* ADD / UPDATE WORK */
-submitBtn.onclick=async()=>{
-  const mins=minutes.value.includes(".")
-    ? Number(minutes.value.split(".")[0])*60+Number(minutes.value.split(".")[1])
+submitBtn.onclick = async () => {
+  const mins = minutes.value.includes(".")
+    ? Number(minutes.value.split(".")[0])*60 + Number(minutes.value.split(".")[1])
     : Number(minutes.value);
 
-  const body={
-    farmerId:farmerSelect.value,
-    workType:workType.value,
-    minutes:mins,
-    ratePer60:Number(rate.value)
+  const body = {
+    farmerId: farmerSelect.value,
+    workType: workType.value,
+    minutes: mins,
+    ratePer60: Number(rate.value)
   };
 
-  const url=editWorkId
-    ? API+"/api/admin/work/"+editWorkId
-    : API+"/api/admin/work";
+  const url = editWorkId
+    ? API + "/api/admin/work/" + editWorkId
+    : API + "/api/admin/work";
 
   await fetch(url,{
-    method:editWorkId?"PUT":"POST",
-    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
-    body:JSON.stringify(body)
+    method: editWorkId ? "PUT" : "POST",
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer " + token() },
+    body: JSON.stringify(body)
   });
 
   resetForm();
-  farmerFilter.value=body.farmerId;
+  farmerFilter.value = body.farmerId;
   loadHistory();
 };
 
 /* LOAD HISTORY */
-farmerFilter.onchange=loadHistory;
+farmerFilter.onchange = loadHistory;
 
 async function loadHistory(){
-  tbody.innerHTML="";
+  tbody.innerHTML = "";
   if(!farmerFilter.value) return;
 
-  const res=await fetch(API+"/api/admin/history/"+farmerFilter.value,{
-    headers:{Authorization:"Bearer "+token()}
+  const res = await fetch(API + "/api/admin/history/" + farmerFilter.value,{
+    headers:{ Authorization:"Bearer " + token() }
   });
-  const {works,payments}=await res.json();
+  const { works, payments } = await res.json();
 
-  let total=0, paid=0;
+  let total = 0, paid = 0;
 
   works.forEach(w=>{
-    total+=w.totalAmount;
-    tbody.innerHTML+=`
+    total += w.totalAmount;
+    tbody.innerHTML += `
     <tr>
       <td>${new Date(w.date).toLocaleDateString()}</td>
       <td>${w.workType}</td>
@@ -271,8 +303,8 @@ async function loadHistory(){
   });
 
   payments.forEach(p=>{
-    paid+=p.amount;
-    tbody.innerHTML+=`
+    paid += p.amount;
+    tbody.innerHTML += `
     <tr style="background:#ecfdf5">
       <td>${new Date(p.date).toLocaleDateString()}</td>
       <td>-</td><td>-</td><td>-</td><td>-</td>
@@ -285,79 +317,90 @@ async function loadHistory(){
     </tr>`;
   });
 
-  totalBox.value=total;
-  paidBox.value=paid;
-  balanceBox.value=total-paid;
+  totalBox.value = total;
+  paidBox.value = paid;
+  balanceBox.value = total - paid;
 }
 
 /* HELPERS */
 function startEdit(id,f,wt,m,r){
-  editWorkId=id;
-  farmerSelect.value=f;
-  workType.value=wt;
-  minutes.value=m;
-  rate.value=r;
-  formTitle.innerText="Edit Work";
-  submitBtn.innerText="Update Work";
+  editWorkId = id;
+  farmerSelect.value = f;
+  workType.value = wt;
+  minutes.value = m;
+  rate.value = r;
+  formTitle.innerText = "Edit Work";
+  submitBtn.innerText = "Update Work";
 }
 function resetForm(){
-  editWorkId=null;
-  formTitle.innerText="Add Work";
-  submitBtn.innerText="Add Work";
-  workType.value=minutes.value=rate.value="";
+  editWorkId = null;
+  formTitle.innerText = "Add Work";
+  submitBtn.innerText = "Add Work";
+  workType.value = "";
+  minutes.value = "";
+  rate.value = "";
 }
 async function deleteWork(id){
-  if(!confirm("Delete work?"))return;
-  await fetch(API+"/api/admin/work/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token()}});
+  if(!confirm("Delete work?")) return;
+  await fetch(API + "/api/admin/work/" + id,{
+    method:"DELETE",
+    headers:{ Authorization:"Bearer " + token() }
+  });
   loadHistory();
 }
 
 /* PAYMENT */
 async function makePayment(){
-  await fetch(API+"/api/admin/payment",{
+  await fetch(API + "/api/admin/payment",{
     method:"POST",
-    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
-    body:JSON.stringify({ farmerId:paymentFarmer.value, amount:Number(paymentAmount.value) })
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer " + token() },
+    body: JSON.stringify({
+      farmerId: paymentFarmer.value,
+      amount: Number(paymentAmount.value)
+    })
   });
-  paymentAmount.value="";
-  farmerFilter.value=paymentFarmer.value;
+  paymentAmount.value = "";
+  farmerFilter.value = paymentFarmer.value;
   loadHistory();
 }
-async function editPayment(id,a){
-  const n=prompt("New amount",a);
-  if(!n)return;
-  await fetch(API+"/api/admin/payment/"+id,{
+async function editPayment(id,amt){
+  const n = prompt("New amount", amt);
+  if(!n) return;
+  await fetch(API + "/api/admin/payment/" + id,{
     method:"PUT",
-    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
-    body:JSON.stringify({ amount:Number(n) })
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer " + token() },
+    body: JSON.stringify({ amount:Number(n) })
   });
   loadHistory();
 }
 async function deletePayment(id){
-  if(!confirm("Delete payment?"))return;
-  await fetch(API+"/api/admin/payment/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token()}});
+  if(!confirm("Delete payment?")) return;
+  await fetch(API + "/api/admin/payment/" + id,{
+    method:"DELETE",
+    headers:{ Authorization:"Bearer " + token() }
+  });
   loadHistory();
 }
 
 /* ADMIN OPTIONS */
-function togglePassword(){passwordBox.classList.toggle("hide")}
-function toggleFarmers(){farmersBox.classList.toggle("hide")}
+function togglePassword(){ passwordBox.classList.toggle("hide"); }
+function toggleFarmers(){ farmersBox.classList.toggle("hide"); }
 
 async function changePassword(){
-  await fetch(API+"/api/admin/change-password",{
+  await fetch(API + "/api/admin/change-password",{
     method:"POST",
-    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
-    body:JSON.stringify({ oldPassword:oldPass.value, newPassword:newPass.value })
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer " + token() },
+    body: JSON.stringify({ oldPassword: oldPass.value, newPassword: newPass.value })
   });
   alert("Password updated");
-  oldPass.value=newPass.value="";
+  oldPass.value = newPass.value = "";
 }
 
 async function deleteFarmer(){
-  await fetch(API+"/api/admin/farmer/"+farmerDeleteSelect.value,{
+  await fetch(API + "/api/admin/farmer/" + farmerDeleteSelect.value,{
     method:"DELETE",
-    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
-    body:JSON.stringify({ adminPassword:adminDeletePass.value })
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer " + token() },
+    body: JSON.stringify({ adminPassword: adminDeletePass.value })
   });
   alert("Farmer deleted");
   loadFarmers();
@@ -365,7 +408,7 @@ async function deleteFarmer(){
 
 function logout(){
   localStorage.clear();
-  location.href="index.html";
+  location.href = "index.html";
 }
 </script>
 
