@@ -89,21 +89,21 @@ th,td{
 
 <h2>Admin Dashboard</h2>
 
-<!-- ADD WORK -->
+<!-- ADD / EDIT WORK -->
 <div class="card">
-  <h3>Add Work</h3>
+  <h3 id="formTitle">Add Work</h3>
 
-  <label>Farmer</label>
+  <label for="farmerSelect">Farmer</label>
   <select id="farmerSelect"></select>
 
-  <label>Work Type</label>
-  <input id="workType">
+  <label for="workType">Work Type</label>
+  <input id="workType" placeholder="Eg: Ploughing">
 
-  <label>Minutes</label>
-  <input id="minutes">
+  <label for="minutes">Minutes</label>
+  <input id="minutes" placeholder="1.20 = 1 hour 20 mins">
 
-  <label>Rate / Hour</label>
-  <input id="rate">
+  <label for="rate">Rate / Hour</label>
+  <input id="rate" type="number">
 
   <button id="submitBtn">Add Work</button>
 </div>
@@ -112,10 +112,10 @@ th,td{
 <div class="card">
   <h3>Farmer Payment</h3>
 
-  <label>Select Farmer</label>
+  <label for="paymentFarmer">Select Farmer</label>
   <select id="paymentFarmer"></select>
 
-  <label>Amount</label>
+  <label for="paymentAmount">Amount</label>
   <input id="paymentAmount" type="number">
 
   <button class="success" onclick="makePayment()">Add Payment</button>
@@ -123,7 +123,7 @@ th,td{
 
 <!-- HISTORY -->
 <div class="card">
-  <label>Farmer History</label>
+  <label for="farmerFilter">Farmer History</label>
   <select id="farmerFilter"></select>
 
   <table>
@@ -152,54 +152,66 @@ th,td{
 </div>
 
 <script>
-const API = "http://localhost:4000";
-const token = () => localStorage.getItem("token");
+const API="http://localhost:4000";
+const token=()=>localStorage.getItem("token");
 
-window.onload = loadFarmers;
+let editWorkId=null;
+window.onload=loadFarmers;
 
 /* LOAD FARMERS */
 async function loadFarmers(){
-  const res = await fetch(API+"/api/admin/farmers",{headers:{Authorization:"Bearer "+token()}});
-  const data = await res.json();
-  let opt = '<option value="">Select</option>';
+  const res=await fetch(API+"/api/admin/farmers",{headers:{Authorization:"Bearer "+token()}});
+  const data=await res.json();
+  let opt='<option value="">Select</option>';
   data.farmers.forEach(f=>opt+=`<option value="${f._id}">${f.name}</option>`);
-  farmerSelect.innerHTML = farmerFilter.innerHTML = paymentFarmer.innerHTML = opt;
+  farmerSelect.innerHTML=farmerFilter.innerHTML=paymentFarmer.innerHTML=opt;
 }
 
-/* ADD PAYMENT */
-async function makePayment(){
-  const farmerId = paymentFarmer.value;
-  const amount = Number(paymentAmount.value);
+/* ADD / UPDATE WORK */
+submitBtn.onclick=async()=>{
+  const mins = minutes.value.includes(".")
+    ? Number(minutes.value.split(".")[0])*60 + Number(minutes.value.split(".")[1])
+    : Number(minutes.value);
 
-  await fetch(API+"/api/admin/payment",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token()
-    },
-    body:JSON.stringify({ farmerId, amount })
+  const body={
+    farmerId:farmerSelect.value,
+    workType:workType.value,
+    minutes:mins,
+    ratePer60:Number(rate.value)
+  };
+
+  const url=editWorkId
+    ? API+"/api/admin/work/"+editWorkId
+    : API+"/api/admin/work";
+
+  await fetch(url,{
+    method:editWorkId?"PUT":"POST",
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
+    body:JSON.stringify(body)
   });
 
-  paymentAmount.value="";
-  farmerFilter.value = farmerId;
+  resetForm();
+  farmerFilter.value=body.farmerId;
   loadHistory();
-}
+};
 
 /* LOAD HISTORY */
-farmerFilter.onchange = loadHistory;
+farmerFilter.onchange=loadHistory;
 
 async function loadHistory(){
   tbody.innerHTML="";
-  const res = await fetch(API+"/api/admin/history/"+farmerFilter.value,{
+  if(!farmerFilter.value) return;
+
+  const res=await fetch(API+"/api/admin/history/"+farmerFilter.value,{
     headers:{Authorization:"Bearer "+token()}
   });
-  const { works, payments } = await res.json();
+  const { works, payments }=await res.json();
 
   let total=0, paid=0;
 
   works.forEach(w=>{
-    total += w.totalAmount;
-    tbody.innerHTML += `
+    total+=w.totalAmount;
+    tbody.innerHTML+=`
     <tr>
       <td>${new Date(w.date).toLocaleDateString()}</td>
       <td>${w.workType}</td>
@@ -208,13 +220,16 @@ async function loadHistory(){
       <td>${w.totalAmount}</td>
       <td>-</td>
       <td>-</td>
-      <td>-</td>
+      <td>
+        <button class="warning" onclick="startEdit('${w._id}','${w.farmer}','${w.workType}',${w.minutes},${w.ratePer60})">Edit</button>
+        <button class="danger" onclick="deleteWork('${w._id}')">Delete</button>
+      </td>
     </tr>`;
   });
 
   payments.forEach(p=>{
-    paid += p.amount;
-    tbody.innerHTML += `
+    paid+=p.amount;
+    tbody.innerHTML+=`
     <tr style="background:#ecfdf5">
       <td>${new Date(p.date).toLocaleDateString()}</td>
       <td>-</td><td>-</td><td>-</td><td>-</td>
@@ -227,27 +242,59 @@ async function loadHistory(){
     </tr>`;
   });
 
-  totalBox.value = total;
-  paidBox.value = paid;
-  balanceBox.value = total - paid;
+  totalBox.value=total;
+  paidBox.value=paid;
+  balanceBox.value=total-paid;
 }
 
-/* EDIT PAYMENT */
-async function editPayment(id, oldAmt){
-  const amt = prompt("New amount", oldAmt);
-  if(!amt) return;
-  await fetch(API+"/api/admin/payment/"+id,{
-    method:"PUT",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token()
-    },
-    body:JSON.stringify({ amount:Number(amt) })
+/* WORK HELPERS */
+function startEdit(id,farmer,work,mins,rate){
+  editWorkId=id;
+  formTitle.innerText="Edit Work";
+  submitBtn.innerText="Update Work";
+  farmerSelect.value=farmer;
+  workType.value=work;
+  minutes.value=mins;
+  rate.value=rate;
+}
+function resetForm(){
+  editWorkId=null;
+  formTitle.innerText="Add Work";
+  submitBtn.innerText="Add Work";
+  workType.value="";
+  minutes.value="";
+  rate.value="";
+}
+async function deleteWork(id){
+  if(!confirm("Delete work?")) return;
+  await fetch(API+"/api/admin/work/"+id,{
+    method:"DELETE",
+    headers:{Authorization:"Bearer "+token()}
   });
   loadHistory();
 }
 
-/* DELETE PAYMENT */
+/* PAYMENT */
+async function makePayment(){
+  await fetch(API+"/api/admin/payment",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
+    body:JSON.stringify({ farmerId:paymentFarmer.value, amount:Number(paymentAmount.value) })
+  });
+  paymentAmount.value="";
+  farmerFilter.value=paymentFarmer.value;
+  loadHistory();
+}
+async function editPayment(id,amt){
+  const n=prompt("New amount",amt);
+  if(!n) return;
+  await fetch(API+"/api/admin/payment/"+id,{
+    method:"PUT",
+    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
+    body:JSON.stringify({ amount:Number(n) })
+  });
+  loadHistory();
+}
 async function deletePayment(id){
   if(!confirm("Delete payment?")) return;
   await fetch(API+"/api/admin/payment/"+id,{
