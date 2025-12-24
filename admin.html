@@ -8,40 +8,31 @@
 <style>
 :root{
   --primary:#2563eb;
-  --primary-dark:#1e40af;
   --success:#16a34a;
   --danger:#dc2626;
   --warning:#f59e0b;
   --bg:#f4f6fb;
   --card:#ffffff;
   --border:#e5e7eb;
-  --text:#111827;
 }
-*{box-sizing:border-box}
 body{
   margin:0;
-  font-family:"Inter","Segoe UI",Arial,sans-serif;
+  font-family:Segoe UI,Arial;
   background:var(--bg);
-  color:var(--text);
 }
 .container{
   max-width:900px;
   margin:auto;
-  padding:24px;
+  padding:20px;
 }
-h2{text-align:center;color:var(--primary-dark)}
 .card{
-  background:var(--card);
-  border-radius:14px;
-  padding:22px;
-  margin-bottom:22px;
-  box-shadow:0 8px 22px rgba(0,0,0,0.06);
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.08);
 }
-label{
-  display:block;
-  margin-top:14px;
-  font-weight:600;
-}
+label{display:block;margin-top:12px;font-weight:600}
 input,select{
   width:100%;
   padding:10px;
@@ -50,8 +41,8 @@ input,select{
   border-radius:8px;
 }
 button{
-  margin-top:16px;
-  padding:10px 18px;
+  margin-top:14px;
+  padding:10px 16px;
   border:none;
   border-radius:8px;
   font-weight:600;
@@ -60,35 +51,33 @@ button{
   color:white;
 }
 button.success{background:var(--success)}
-button.warning{background:var(--warning);color:#111}
 button.danger{background:var(--danger)}
+button.warning{background:var(--warning);color:#000}
 table{
   width:100%;
   border-collapse:collapse;
-  margin-top:16px;
-  background:#fff;
+  margin-top:15px;
 }
 th,td{
-  padding:12px;
+  padding:10px;
   border-bottom:1px solid var(--border);
   text-align:center;
 }
-th{background:#f1f5f9}
 .summary{
   display:flex;
-  gap:20px;
-  margin-top:20px;
+  gap:15px;
+  margin-top:15px;
 }
-.summary > div{
+.summary div{
   flex:1;
-  background:#f8fafc;
-  padding:16px;
+  background:#f1f5f9;
+  padding:12px;
   border-radius:10px;
 }
 .summary input{
   border:none;
   background:none;
-  font-size:22px;
+  font-size:20px;
   font-weight:700;
 }
 .center{text-align:center}
@@ -100,29 +89,21 @@ th{background:#f1f5f9}
 
 <h2>Admin Dashboard</h2>
 
-<!-- ADD / EDIT WORK -->
+<!-- ADD WORK -->
 <div class="card">
-  <h3 id="formTitle">Add Work</h3>
+  <h3>Add Work</h3>
 
-  <label for="farmerSelect">Farmer</label>
+  <label>Farmer</label>
   <select id="farmerSelect"></select>
 
-  <label for="workType">Work Type</label>
-  <select id="workType">
-    <option value="">-- Select --</option>
-    <option>దుక్కు</option>
-    <option>లోడింగ్</option>
-    <option>రోటావేటర్</option>
-    <option>జొన్నలు</option>
-    <option>వరిసేను ఆట</option>
-    <option>గత్తం</option>
-  </select>
+  <label>Work Type</label>
+  <input id="workType">
 
-  <label for="minutes">Minutes</label>
-  <input id="minutes" placeholder="1.20 = 1h 20m">
+  <label>Minutes</label>
+  <input id="minutes">
 
-  <label for="rate">Rate per Hour</label>
-  <input id="rate" type="number">
+  <label>Rate / Hour</label>
+  <input id="rate">
 
   <button id="submitBtn">Add Work</button>
 </div>
@@ -131,18 +112,18 @@ th{background:#f1f5f9}
 <div class="card">
   <h3>Farmer Payment</h3>
 
-  <label for="paymentFarmer">Select Farmer</label>
+  <label>Select Farmer</label>
   <select id="paymentFarmer"></select>
 
-  <label for="paymentAmount">Payment Amount</label>
-  <input id="paymentAmount" type="number" placeholder="Enter amount">
+  <label>Amount</label>
+  <input id="paymentAmount" type="number">
 
-  <button class="success" onclick="makePayment()">Pay Amount</button>
+  <button class="success" onclick="makePayment()">Add Payment</button>
 </div>
 
 <!-- HISTORY -->
 <div class="card">
-  <label for="farmerFilter">Farmer History</label>
+  <label>Farmer History</label>
   <select id="farmerFilter"></select>
 
   <table>
@@ -168,249 +149,112 @@ th{background:#f1f5f9}
   </div>
 </div>
 
-<!-- CHANGE PASSWORD -->
-<div class="card center">
-  <button class="warning" onclick="togglePasswordBox()">Change Admin Password</button>
-</div>
-
-<div class="card" id="passwordBox" style="display:none">
-  <label for="oldPass">Old Password</label>
-  <input id="oldPass" type="password">
-
-  <label for="newPass">New Password</label>
-  <input id="newPass" type="password">
-
-  <button onclick="changePassword()">Update Password</button>
-</div>
-
-<!-- MANAGE FARMERS (SECURE DELETE) -->
-<div class="card center">
-  <button class="warning" onclick="toggleFarmers()">Manage Farmers</button>
-</div>
-
-<div class="card" id="farmersBox" style="display:none">
-  <label for="farmerDeleteSelect">Select Farmer</label>
-  <select id="farmerDeleteSelect"></select>
-
-  <label for="adminDeletePass">Admin Password</label>
-  <input id="adminDeletePass" type="password" placeholder="Enter admin password">
-
-  <button class="danger" onclick="deleteFarmerSecure()">Delete Farmer</button>
-</div>
-
-<div class="center">
-  <button class="danger" onclick="logout()">Logout</button>
-</div>
-
 </div>
 
 <script>
-const API="https://tractor-back-1l40.onrender.com";
-const token=()=>localStorage.getItem("token");
-let editWorkId=null;
-window.onload=loadFarmers;
+const API = "http://localhost:4000";
+const token = () => localStorage.getItem("token");
+
+window.onload = loadFarmers;
 
 /* LOAD FARMERS */
 async function loadFarmers(){
-  const res=await fetch(API+"/api/admin/farmers",{headers:{Authorization:"Bearer "+token()}});
-  const data=await res.json();
-  const farmers=data.farmers||[];
-
-  let opt='<option value="">-- Select --</option>';
-  farmers.forEach(f=>opt+=`<option value="${f._id}">${f.name}</option>`);
-
-  farmerSelect.innerHTML=opt;
-  farmerFilter.innerHTML=opt;
-  farmerDeleteSelect.innerHTML=opt;
-  paymentFarmer.innerHTML=opt;
+  const res = await fetch(API+"/api/admin/farmers",{headers:{Authorization:"Bearer "+token()}});
+  const data = await res.json();
+  let opt = '<option value="">Select</option>';
+  data.farmers.forEach(f=>opt+=`<option value="${f._id}">${f.name}</option>`);
+  farmerSelect.innerHTML = farmerFilter.innerHTML = paymentFarmer.innerHTML = opt;
 }
 
-/* ADD / UPDATE WORK */
-submitBtn.onclick=async()=>{
-  let mins=minutes.value.includes(".")
-    ? minutes.value.split(".")[0]*60+Number(minutes.value.split(".")[1])
-    : Number(minutes.value);
-
-  const body={farmerId:farmerSelect.value,workType:workType.value,minutes:mins,ratePer60:Number(rate.value)};
-
-  const url=editWorkId?API+"/api/admin/work/"+editWorkId:API+"/api/admin/work";
-  const method=editWorkId?"PUT":"POST";
-
-  await fetch(url,{
-    method,
-    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
-    body:JSON.stringify(body)
-  });
-
-  alert(editWorkId?"Work Updated":"Work Added");
-  resetForm();
-  farmerFilter.value=body.farmerId;
-  loadHistory();
-};
-
-/* LOAD HISTORY */
-farmerFilter.onchange=loadHistory;
-async function loadHistory(){
-  tbody.innerHTML="";
-  if(!farmerFilter.value) return;
-
-  const res=await fetch(API+"/api/admin/work?farmerId="+farmerFilter.value,{
-    headers:{Authorization:"Bearer "+token()}
-  });
-  const data=await res.json();
-  const works=data.works||[];
-
-  let total=0, paid=0;
-
-  works.forEach(w=>{
-    total+=w.totalAmount;
-    paid+=w.paymentGiven||0;
-
-    if(w.paymentGiven>0){
-      tbody.innerHTML+=`
-      <tr>
-        <td>${new Date().toLocaleDateString()}</td>
-        <td>-</td><td>-</td><td>-</td><td>-</td>
-        <td>${w.paymentGiven}</td>
-        <td>-</td>
-        <td>-</td>
-      </tr>`;
-    }else{
-      tbody.innerHTML+=`
-      <tr>
-        <td>${new Date(w.date).toLocaleDateString()}</td>
-        <td>${w.workType}</td>
-        <td>${w.minutes}</td>
-        <td>${w.ratePer60}</td>
-        <td>${w.totalAmount}</td>
-        <td>-</td>
-        <td>-</td>
-        <td>
-          <button class="warning" onclick="startEdit('${w._id}','${w.farmer._id}','${w.workType}',${w.minutes},${w.ratePer60})">Edit</button>
-          <button class="danger" onclick="deleteWork('${w._id}')">Delete</button>
-        </td>
-      </tr>`;
-    }
-  });
-
-  totalBox.value=total;
-  paidBox.value=paid;
-  balanceBox.value=total-paid;
-}
-
-/* PAYMENT */
+/* ADD PAYMENT */
 async function makePayment(){
   const farmerId = paymentFarmer.value;
   const amount = Number(paymentAmount.value);
 
-  if(!farmerId || !amount){
-    return alert("Select farmer & enter amount");
-  }
-
-  const res = await fetch(API+"/api/admin/payment/"+farmerId,{
+  await fetch(API+"/api/admin/payment",{
     method:"POST",
     headers:{
       "Content-Type":"application/json",
       Authorization:"Bearer "+token()
     },
-    body:JSON.stringify({ amount })
+    body:JSON.stringify({ farmerId, amount })
   });
 
-  if(!res.ok){
-    const d = await res.json();
-    return alert(d.error || "Payment failed");
-  }
-
-  // ✅ ADD PAYMENT ROW IMMEDIATELY
-  const today = new Date().toLocaleDateString();
-
-  tbody.innerHTML = `
-    <tr style="background:#ecfdf5">
-      <td>${today}</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td><strong>${amount}</strong></td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-  ` + tbody.innerHTML;
-
-  // ✅ UPDATE SUMMARY
-  paidBox.value = Number(paidBox.value || 0) + amount;
-  balanceBox.value = Number(totalBox.value) - Number(paidBox.value);
-
-  alert("Payment added to history");
-
-  paymentAmount.value = "";
-}
-
-/* SECURE DELETE FARMER */
-async function deleteFarmerSecure(){
-  if(!farmerDeleteSelect.value||!adminDeletePass.value)
-    return alert("Select farmer & enter admin password");
-
-  if(!confirm("Delete farmer and all works?")) return;
-
-  const res=await fetch(API+"/api/admin/farmer/"+farmerDeleteSelect.value,{
-    method:"DELETE",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+token()
-    },
-    body:JSON.stringify({adminPassword:adminDeletePass.value})
-  });
-
-  const data=await res.json();
-  if(!res.ok) return alert(data.error);
-
-  alert("Farmer deleted");
-  adminDeletePass.value="";
-  loadFarmers();
-}
-
-/* HELPERS */
-function startEdit(id,farmerId,work,mins,rate){
-  editWorkId=id;
-  formTitle.innerText="Edit Work";
-  submitBtn.innerText="Update Work";
-  farmerSelect.value=farmerId;
-  workType.value=work;
-  minutes.value=mins;
-  rate.value=rate;
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-function resetForm(){
-  editWorkId=null;
-  formTitle.innerText="Add Work";
-  submitBtn.innerText="Add Work";
-  farmerSelect.value="";
-  workType.value="";
-  minutes.value="";
-  rate.value="";
-}
-async function deleteWork(id){
-  if(!confirm("Delete work?")) return;
-  await fetch(API+"/api/admin/work/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+token()}});
+  paymentAmount.value="";
+  farmerFilter.value = farmerId;
   loadHistory();
 }
-function togglePasswordBox(){passwordBox.style.display=passwordBox.style.display==="none"?"block":"none";}
-function toggleFarmers(){farmersBox.style.display=farmersBox.style.display==="none"?"block":"none";}
-async function changePassword(){
-  if(!oldPass.value||!newPass.value) return alert("Enter passwords");
-  const res=await fetch(API+"/api/admin/change-password",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json", Authorization:"Bearer "+token() },
-    body:JSON.stringify({oldPassword:oldPass.value,newPassword:newPass.value})
+
+/* LOAD HISTORY */
+farmerFilter.onchange = loadHistory;
+
+async function loadHistory(){
+  tbody.innerHTML="";
+  const res = await fetch(API+"/api/admin/history/"+farmerFilter.value,{
+    headers:{Authorization:"Bearer "+token()}
   });
-  const d=await res.json();
-  alert(res.ok?"Password updated":d.error);
-  oldPass.value=newPass.value="";
+  const { works, payments } = await res.json();
+
+  let total=0, paid=0;
+
+  works.forEach(w=>{
+    total += w.totalAmount;
+    tbody.innerHTML += `
+    <tr>
+      <td>${new Date(w.date).toLocaleDateString()}</td>
+      <td>${w.workType}</td>
+      <td>${w.minutes}</td>
+      <td>${w.ratePer60}</td>
+      <td>${w.totalAmount}</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>`;
+  });
+
+  payments.forEach(p=>{
+    paid += p.amount;
+    tbody.innerHTML += `
+    <tr style="background:#ecfdf5">
+      <td>${new Date(p.date).toLocaleDateString()}</td>
+      <td>-</td><td>-</td><td>-</td><td>-</td>
+      <td>${p.amount}</td>
+      <td>-</td>
+      <td>
+        <button class="warning" onclick="editPayment('${p._id}',${p.amount})">Edit</button>
+        <button class="danger" onclick="deletePayment('${p._id}')">Delete</button>
+      </td>
+    </tr>`;
+  });
+
+  totalBox.value = total;
+  paidBox.value = paid;
+  balanceBox.value = total - paid;
 }
-function logout(){
-  localStorage.clear();
-  location.href="index.html";
+
+/* EDIT PAYMENT */
+async function editPayment(id, oldAmt){
+  const amt = prompt("New amount", oldAmt);
+  if(!amt) return;
+  await fetch(API+"/api/admin/payment/"+id,{
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:"Bearer "+token()
+    },
+    body:JSON.stringify({ amount:Number(amt) })
+  });
+  loadHistory();
+}
+
+/* DELETE PAYMENT */
+async function deletePayment(id){
+  if(!confirm("Delete payment?")) return;
+  await fetch(API+"/api/admin/payment/"+id,{
+    method:"DELETE",
+    headers:{Authorization:"Bearer "+token()}
+  });
+  loadHistory();
 }
 </script>
 
